@@ -143,8 +143,8 @@ export default function DesignSystemDemo() {
               }
             >
               <div className="flex gap-2">
-                <Badge type="success">Active</Badge>
-                <Badge type="info">v2.0</Badge>
+                <Badge variant="success">Active</Badge>
+                <Badge variant="info">v2.0</Badge>
               </div>
             </Card>
           </div>
@@ -217,12 +217,12 @@ export default function DesignSystemDemo() {
           </h2>
           <Card title="状态标签">
             <div className="flex flex-wrap gap-3">
-              <Badge type="default">Default</Badge>
-              <Badge type="primary">Primary</Badge>
-              <Badge type="success">Success</Badge>
-              <Badge type="warning">Warning</Badge>
-              <Badge type="danger">Danger</Badge>
-              <Badge type="info">Info</Badge>
+              <Badge variant="default">Default</Badge>
+              <Badge variant="primary">Primary</Badge>
+              <Badge variant="success">Success</Badge>
+              <Badge variant="warning">Warning</Badge>
+              <Badge variant="danger">Danger</Badge>
+              <Badge variant="info">Info</Badge>
             </div>
           </Card>
         </section>

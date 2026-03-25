@@ -87,6 +87,101 @@ router.get('/agents', async (_req, res) => {
   }
 });
 
+// GET /api/gateway/agents/:name - 获取单个 Agent
+router.get('/agents/:name', async (req, res) => {
+  try {
+    const client = getGatewayClient();
+    const { name } = req.params;
+    const result = await client.call('agents.get', { name });
+
+    res.json({
+      success: true,
+      agent: result,
+      mockMode: client.isMockMode,
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    res.status(500).json({
+      success: false,
+      error: message,
+    });
+  }
+});
+
+// POST /api/gateway/agents - 创建 Agent
+router.post('/agents', async (req, res) => {
+  try {
+    const client = getGatewayClient();
+    const agent = req.body;
+
+    if (!agent.name) {
+      res.status(400).json({
+        success: false,
+        error: 'Agent name is required',
+      });
+      return;
+    }
+
+    const result = await client.call('agents.create', agent);
+
+    res.json({
+      success: true,
+      agent: result,
+      mockMode: client.isMockMode,
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    res.status(500).json({
+      success: false,
+      error: message,
+    });
+  }
+});
+
+// PUT /api/gateway/agents/:name - 更新 Agent
+router.put('/agents/:name', async (req, res) => {
+  try {
+    const client = getGatewayClient();
+    const { name } = req.params;
+    const updates = req.body;
+
+    const result = await client.call('agents.update', { name, ...updates });
+
+    res.json({
+      success: true,
+      agent: result,
+      mockMode: client.isMockMode,
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    res.status(500).json({
+      success: false,
+      error: message,
+    });
+  }
+});
+
+// DELETE /api/gateway/agents/:name - 删除 Agent
+router.delete('/agents/:name', async (req, res) => {
+  try {
+    const client = getGatewayClient();
+    const { name } = req.params;
+
+    await client.call('agents.delete', { name });
+
+    res.json({
+      success: true,
+      mockMode: client.isMockMode,
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    res.status(500).json({
+      success: false,
+      error: message,
+    });
+  }
+});
+
 // GET /api/gateway/sessions - 获取会话列表
 router.get('/sessions', async (_req, res) => {
   try {

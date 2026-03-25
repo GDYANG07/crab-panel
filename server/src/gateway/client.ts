@@ -237,6 +237,10 @@ export class GatewayClient extends EventEmitter {
           { id: 'mock-agent-1', name: 'Mock Agent', status: 'idle', type: 'assistant' },
         ],
       },
+      'agents.get': { id: 'mock-agent-1', name: 'Mock Agent', status: 'idle', type: 'assistant' },
+      'agents.create': { success: true },
+      'agents.update': { success: true },
+      'agents.delete': { success: true },
       'sessions.list': {
         sessions: [
           {

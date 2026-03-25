@@ -6,7 +6,7 @@ const badgeVariants = cva(
   'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium transition-colors',
   {
     variants: {
-      type: {
+      variant: {
         success:
           'bg-[var(--color-success)]/10 text-[var(--color-success)] border border-[var(--color-success)]/20',
         warning:
@@ -19,23 +19,31 @@ const badgeVariants = cva(
         primary:
           'bg-[var(--color-primary)]/10 text-[var(--color-primary)] border border-[var(--color-primary)]/20',
       },
+      size: {
+        sm: 'px-2 py-0 text-[10px]',
+        md: 'px-2.5 py-0.5 text-xs',
+        lg: 'px-3 py-1 text-sm',
+      },
     },
     defaultVariants: {
-      type: 'default',
+      variant: 'default',
+      size: 'md',
     },
   }
 );
 
 export interface BadgeProps
   extends HTMLAttributes<HTMLSpanElement>,
-    VariantProps<typeof badgeVariants> {}
+    VariantProps<typeof badgeVariants> {
+  size?: 'sm' | 'md' | 'lg';
+}
 
 export const Badge = forwardRef<HTMLSpanElement, BadgeProps>(
-  ({ className, type, children, ...props }, ref) => {
+  ({ className, variant, size, children, ...props }, ref) => {
     return (
       <span
         ref={ref}
-        className={cn(badgeVariants({ type }), className)}
+        className={cn(badgeVariants({ variant, size }), className)}
         {...props}
       >
         {children}
