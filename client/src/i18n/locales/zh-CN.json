@@ -1,0 +1,25 @@
+{
+  "app": {
+    "title": "🦀 CrabPanel 蟹面板",
+    "subtitle": "OpenClaw AI Agent 框架的可视化管理面板"
+  },
+  "common": {
+    "refresh": "刷新",
+    "loading": "加载中...",
+    "error": "错误",
+    "save": "保存",
+    "cancel": "取消",
+    "confirm": "确认",
+    "delete": "删除",
+    "edit": "编辑",
+    "create": "创建"
+  },
+  "nav": {
+    "dashboard": "仪表盘",
+    "agents": "Agent 管理",
+    "channels": "通道管理",
+    "skills": "技能管理",
+    "config": "配置管理",
+    "logs": "日志查看"
+  }
+}

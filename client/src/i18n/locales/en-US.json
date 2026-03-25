@@ -1,0 +1,25 @@
+{
+  "app": {
+    "title": "🦀 CrabPanel",
+    "subtitle": "Visual management panel for OpenClaw AI Agent framework"
+  },
+  "common": {
+    "refresh": "Refresh",
+    "loading": "Loading...",
+    "error": "Error",
+    "save": "Save",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "delete": "Delete",
+    "edit": "Edit",
+    "create": "Create"
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "agents": "Agents",
+    "channels": "Channels",
+    "skills": "Skills",
+    "config": "Configuration",
+    "logs": "Logs"
+  }
+}
