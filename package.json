@@ -16,14 +16,17 @@
     "install:all": "npm install"
   },
   "devDependencies": {
-    "concurrently": "^8.2.2",
     "@typescript-eslint/eslint-plugin": "^6.17.0",
     "@typescript-eslint/parser": "^6.17.0",
+    "concurrently": "^8.2.2",
     "eslint": "^8.56.0",
     "prettier": "^3.1.1",
     "typescript": "^5.3.3"
   },
   "engines": {
     "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "@monaco-editor/react": "^4.7.0"
   }
 }
