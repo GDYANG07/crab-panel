@@ -115,7 +115,7 @@ export function setupChatWebSocket(ws: WebSocket): void {
 }
 
 // 模拟流式响应
-function simulateStreamResponse(ws: WebSocket, originalContent: string): void {
+function simulateStreamResponse(ws: WebSocket, _originalContent: string): void {
   const responses = [
     '这是一个模拟响应。',
     'Gateway 当前未连接，',

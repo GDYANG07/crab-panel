@@ -266,6 +266,16 @@ export class GatewayClient extends EventEmitter {
           },
         ],
       },
+      'channels.list': { channels: [], mock: true },
+      'channels.create': { success: true, mock: true },
+      'channels.update': { success: true, mock: true },
+      'channels.delete': { success: true, mock: true },
+      'channels.test': { success: true, message: 'Connection test passed', mock: true },
+      'skills.list': { skills: [], mock: true },
+      'skills.installed': { skills: [], mock: true },
+      'skills.install': { success: true, mock: true },
+      'skills.uninstall': { success: true, mock: true },
+      'skills.configure': { success: true, mock: true },
     };
 
     const result = mocks[method] || { mock: true, method, params };

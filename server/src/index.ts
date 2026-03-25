@@ -7,6 +7,8 @@ import { getGatewayClient } from './gateway/client.js';
 import gatewayRoutes from './routes/gateway.js';
 import systemRoutes from './routes/system.js';
 import cliRoutes from './routes/cli.js';
+import channelsRoutes from './routes/channels.js';
+import skillsRoutes from './routes/skills.js';
 import { setupChatWebSocket } from './routes/chat-ws.js';
 
 dotenv.config();
@@ -30,6 +32,8 @@ app.use(express.json());
 app.use('/api/gateway', gatewayRoutes);
 app.use('/api/system', systemRoutes);
 app.use('/api/cli', cliRoutes);
+app.use('/api/channels', channelsRoutes);
+app.use('/api/skills', skillsRoutes);
 
 // 健康检查路由
 app.get('/api/health', (_req, res) => {
