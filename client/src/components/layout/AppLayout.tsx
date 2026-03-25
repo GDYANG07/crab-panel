@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Outlet, NavLink, useLocation } from 'react-router-dom';
+import { usePageTitle } from '../../hooks/usePageTitle';
 import {
   LayoutDashboard,
   MessageSquare,
@@ -47,6 +48,21 @@ export function AppLayout() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [gatewayConnected] = useState(true);
+  const [isOffline, setIsOffline] = useState(!navigator.onLine);
+
+  usePageTitle();
+
+  // 网络状态检测
+  useEffect(() => {
+    const onOnline = () => setIsOffline(false);
+    const onOffline = () => setIsOffline(true);
+    window.addEventListener('online', onOnline);
+    window.addEventListener('offline', onOffline);
+    return () => {
+      window.removeEventListener('online', onOnline);
+      window.removeEventListener('offline', onOffline);
+    };
+  }, []);
 
   // 响应式处理
   useEffect(() => {
@@ -111,9 +127,18 @@ export function AppLayout() {
           </div>
         </header>
 
+        {/* 网络离线提示 */}
+        {isOffline && (
+          <div className="bg-[var(--color-danger)] text-white text-sm text-center py-2 px-4">
+            {t('error.networkOffline')} — {t('error.networkOfflineDesc')}
+          </div>
+        )}
+
         {/* 主内容区 */}
         <main className="flex-1 p-4 pb-24 overflow-auto">
-          <Outlet />
+          <div key={location.pathname} className="animate-fade-in">
+            <Outlet />
+          </div>
         </main>
 
         {/* 底部导航 */}
@@ -220,6 +245,16 @@ export function AppLayout() {
         </div>
       </header>
 
+      {/* 网络离线提示 */}
+      {isOffline && (
+        <div
+          className="bg-[var(--color-danger)] text-white text-sm text-center py-2 px-4 sticky top-14 z-30 transition-all"
+          style={{ marginLeft: sidebarWidth }}
+        >
+          {t('error.networkOffline')} — {t('error.networkOfflineDesc')}
+        </div>
+      )}
+
       {/* 左侧边栏 */}
       <aside
         className="fixed left-0 top-0 bottom-0 bg-[var(--color-card)] border-r border-[var(--color-border)] flex flex-col z-50 transition-all duration-200"
@@ -281,10 +316,12 @@ export function AppLayout() {
 
       {/* 主内容区 */}
       <main
-        className="flex-1 p-6 transition-all duration-200"
+        className="flex-1 p-6 transition-all duration-300"
         style={{ marginLeft: sidebarWidth, marginTop: 0, marginBottom: '32px' }}
       >
-        <Outlet />
+        <div key={location.pathname} className="animate-fade-in">
+          <Outlet />
+        </div>
       </main>
 
       {/* 底部状态栏 */}

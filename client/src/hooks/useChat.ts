@@ -1,5 +1,7 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 
+const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+
 export interface Message {
   id: string;
   role: 'user' | 'assistant';
@@ -72,10 +74,9 @@ export function useChat(options: UseChatOptions = {}) {
   const [connectionError, setConnectionError] = useState<string | null>(null);
   const [isMockMode, setIsMockMode] = useState(false);
 
-  const wsRef = useRef<WebSocket | null>(null);
-  const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const streamingMessageIdRef = useRef<string | null>(null);
+  const eventSourceRef = useRef<EventSource | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
+  const streamingMessageIdRef = useRef<string | null>(null);
 
   const currentConversation = conversations.find(c => c.id === currentConversationId) || null;
 
@@ -101,98 +102,88 @@ export function useChat(options: UseChatOptions = {}) {
     setCurrentConversationId(defaultConversation.id);
   }, []);
 
-  // 连接 WebSocket
+  // 检查连接状态
+  const checkStatus = useCallback(async () => {
+    try {
+      const response = await fetch(`${API_BASE}/api/status`);
+      if (response.ok) {
+        const data = await response.json();
+        setIsMockMode(data.mockMode);
+        setIsConnected(data.installed);
+        return data;
+      }
+    } catch {
+      setIsConnected(false);
+    }
+    return null;
+  }, []);
+
+  // 连接 SSE
   const connect = useCallback(() => {
-    if (wsRef.current?.readyState === WebSocket.OPEN) return;
+    if (eventSourceRef.current?.readyState === EventSource.OPEN) return;
 
     setIsConnecting(true);
     setConnectionError(null);
 
     try {
-      const ws = new WebSocket('ws://localhost:3000/ws/chat');
+      // 创建 SSE 连接
+      const es = new EventSource(`${API_BASE}/api/chat/stream`);
 
-      ws.onopen = () => {
+      es.onopen = () => {
         setIsConnected(true);
         setIsConnecting(false);
-        setIsMockMode(false);
         setConnectionError(null);
       };
 
-      ws.onmessage = (event) => {
+      es.onmessage = (event) => {
         try {
           const data = JSON.parse(event.data);
-          handleWebSocketMessage(data);
+          handleSSEMessage(data);
         } catch {
-          // 处理纯文本消息
-          if (streamingMessageIdRef.current) {
-            updateStreamingMessage(streamingMessageIdRef.current, event.data);
-          }
+          // 忽略解析错误
         }
       };
 
-      ws.onclose = () => {
+      es.onerror = () => {
         setIsConnected(false);
         setIsConnecting(false);
-        // 如果连接断开，切换到 Mock 模式
-        setIsMockMode(true);
+        // SSE 连接失败不影响功能，仍然可以使用 POST 发送消息
+        es.close();
       };
 
-      ws.onerror = () => {
-        setIsConnected(false);
-        setIsConnecting(false);
-        setConnectionError('连接失败，已切换到模拟模式');
-        setIsMockMode(true);
-      };
-
-      wsRef.current = ws;
-    } catch (error) {
+      eventSourceRef.current = es;
+    } catch {
       setIsConnecting(false);
-      setConnectionError('无法建立连接，已切换到模拟模式');
-      setIsMockMode(true);
+      setConnectionError('SSE 连接失败');
     }
   }, []);
 
   // 断开连接
   const disconnect = useCallback(() => {
-    if (reconnectTimeoutRef.current) {
-      clearTimeout(reconnectTimeoutRef.current);
-    }
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
+      abortControllerRef.current = null;
     }
-    wsRef.current?.close();
-    wsRef.current = null;
+    eventSourceRef.current?.close();
+    eventSourceRef.current = null;
     setIsConnected(false);
   }, []);
 
-  // 处理 WebSocket 消息
-  const handleWebSocketMessage = useCallback((data: unknown) => {
+  // 处理 SSE 消息
+  const handleSSEMessage = useCallback((data: { type?: string; mockMode?: boolean; [key: string]: unknown }) => {
     if (typeof data !== 'object' || data === null) return;
 
-    const msg = data as { type?: string; content?: string; messageId?: string; error?: string };
-
-    switch (msg.type) {
-      case 'stream_start':
-        if (msg.messageId) {
-          streamingMessageIdRef.current = msg.messageId;
-          addMessage('assistant', '', true);
+    switch (data.type) {
+      case 'connected':
+        if (data.mockMode !== undefined) {
+          setIsMockMode(data.mockMode);
         }
         break;
-      case 'stream_chunk':
-        if (streamingMessageIdRef.current && msg.content) {
-          updateStreamingMessage(streamingMessageIdRef.current, msg.content);
-        }
-        break;
-      case 'stream_end':
-        streamingMessageIdRef.current = null;
-        finalizeStreamingMessage();
-        break;
-      case 'error':
-        streamingMessageIdRef.current = null;
-        options.onError?.(msg.error || '未知错误');
+      case 'heartbeat':
+        // 心跳消息，无需处理
         break;
     }
-  }, [options]);
+  }, []);
 
   // 添加消息
   const addMessage = useCallback((role: 'user' | 'assistant', content: string, isStreaming = false) => {
@@ -248,98 +239,140 @@ export function useChat(options: UseChatOptions = {}) {
       }
       return conv;
     }));
+    streamingMessageIdRef.current = null;
   }, [currentConversationId]);
 
-  // 发送消息
+  // 发送消息（使用 SSE 流式响应）
   const sendMessage = useCallback(async (content: string) => {
     if (!content.trim() || !currentConversationId) return;
 
     // 添加用户消息
     addMessage('user', content);
 
-    if (isMockMode) {
-      // Mock 模式：模拟流式输出
-      const response = MOCK_RESPONSES[Math.floor(Math.random() * MOCK_RESPONSES.length)];
-      const messageId = generateId();
+    // 创建 AbortController 用于取消请求
+    abortControllerRef.current = new AbortController();
 
-      // 添加空的 AI 消息
-      setConversations(prev => prev.map(conv => {
-        if (conv.id === currentConversationId) {
-          return {
-            ...conv,
-            messages: [...conv.messages, {
-              id: messageId,
-              role: 'assistant',
-              content: '',
-              timestamp: new Date(),
-              isStreaming: true,
-            }],
-            lastMessageAt: new Date(),
-          };
-        }
-        return conv;
-      }));
+    // 添加空的 AI 消息用于流式显示
+    const messageId = generateId();
+    setConversations(prev => prev.map(conv => {
+      if (conv.id === currentConversationId) {
+        return {
+          ...conv,
+          messages: [...conv.messages, {
+            id: messageId,
+            role: 'assistant',
+            content: '',
+            timestamp: new Date(),
+            isStreaming: true,
+          }],
+          lastMessageAt: new Date(),
+        };
+      }
+      return conv;
+    }));
+    streamingMessageIdRef.current = messageId;
 
-      // 逐字输出
-      let currentIndex = 0;
-      const interval = setInterval(() => {
-        if (currentIndex >= response.length) {
-          clearInterval(interval);
-          setConversations(prev => prev.map(conv => {
-            if (conv.id === currentConversationId) {
-              return {
-                ...conv,
-                messages: conv.messages.map(msg =>
-                  msg.id === messageId ? { ...msg, isStreaming: false } : msg
-                ),
-              };
+    try {
+      const response = await fetch(`${API_BASE}/api/chat/send`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          message: content,
+          agent: currentConversation?.agentId || 'main',
+          sessionId: currentConversationId,
+        }),
+        signal: abortControllerRef.current.signal,
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      // 处理 SSE 流
+      const reader = response.body?.getReader();
+      const decoder = new TextDecoder();
+
+      if (!reader) {
+        throw new Error('No response body');
+      }
+
+      let buffer = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n\n');
+        buffer = lines.pop() || '';
+
+        for (const line of lines) {
+          const trimmed = line.trim();
+          if (trimmed.startsWith('data: ')) {
+            try {
+              const data = JSON.parse(trimmed.slice(6));
+
+              switch (data.type) {
+                case 'start':
+                  if (data.mockMode !== undefined) {
+                    setIsMockMode(data.mockMode);
+                  }
+                  break;
+                case 'chunk':
+                  if (data.content) {
+                    updateStreamingMessage(messageId, data.content);
+                  }
+                  break;
+                case 'end':
+                  finalizeStreamingMessage();
+                  reader.cancel();
+                  return;
+                case 'error':
+                  options.onError?.(data.error || '未知错误');
+                  finalizeStreamingMessage();
+                  break;
+              }
+            } catch {
+              // 忽略解析错误
             }
-            return conv;
-          }));
-          return;
-        }
-
-        const chunk = response.slice(currentIndex, currentIndex + 3);
-        currentIndex += 3;
-
-        setConversations(prev => prev.map(conv => {
-          if (conv.id === currentConversationId) {
-            return {
-              ...conv,
-              messages: conv.messages.map(msg =>
-                msg.id === messageId
-                  ? { ...msg, content: msg.content + chunk }
-                  : msg
-              ),
-            };
           }
-          return conv;
-        }));
-      }, 50);
+        }
+      }
 
-      return;
-    }
+      finalizeStreamingMessage();
+    } catch (error) {
+      if (error instanceof Error && error.name === 'AbortError') {
+        // 用户取消，正常结束
+        finalizeStreamingMessage();
+      } else {
+        // 其他错误，使用 Mock 模式
+        console.error('Chat error:', error);
+        setIsMockMode(true);
 
-    // 真实 WebSocket 发送
-    if (wsRef.current?.readyState === WebSocket.OPEN) {
-      wsRef.current.send(JSON.stringify({
-        type: 'chat',
-        conversationId: currentConversationId,
-        content,
-        agentId: currentConversation?.agentId,
-      }));
-    } else {
-      // 连接不可用，切换到 Mock 模式
-      setIsMockMode(true);
-      options.onError?.('连接已断开，切换到模拟模式');
+        // 使用 Mock 响应
+        const response = MOCK_RESPONSES[Math.floor(Math.random() * MOCK_RESPONSES.length)];
+
+        // 逐字输出 Mock 响应
+        const chars = response.split('');
+        let index = 0;
+
+        const interval = setInterval(() => {
+          if (index < chars.length) {
+            updateStreamingMessage(messageId, chars[index]);
+            index++;
+          } else {
+            clearInterval(interval);
+            finalizeStreamingMessage();
+          }
+        }, 30);
+      }
     }
-  }, [currentConversationId, currentConversation?.agentId, isMockMode, addMessage, options]);
+  }, [currentConversationId, currentConversation?.agentId, addMessage, updateStreamingMessage, finalizeStreamingMessage, options]);
 
   // 停止生成
   const stopGeneration = useCallback(() => {
-    if (wsRef.current?.readyState === WebSocket.OPEN) {
-      wsRef.current.send(JSON.stringify({ type: 'cancel' }));
-    }
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
       abortControllerRef.current = null;
@@ -408,27 +441,24 @@ export function useChat(options: UseChatOptions = {}) {
     );
   }, [conversations]);
 
-  // 自动连接
+  // 初始连接和状态检查
   useEffect(() => {
+    checkStatus();
     connect();
+
     return () => {
       disconnect();
     };
-  }, [connect, disconnect]);
+  }, [checkStatus, connect, disconnect]);
 
-  // 重连逻辑
+  // 定期轮询状态
   useEffect(() => {
-    if (!isConnected && !isConnecting && !isMockMode) {
-      reconnectTimeoutRef.current = setTimeout(() => {
-        connect();
-      }, 5000);
-    }
-    return () => {
-      if (reconnectTimeoutRef.current) {
-        clearTimeout(reconnectTimeoutRef.current);
-      }
-    };
-  }, [isConnected, isConnecting, isMockMode, connect]);
+    const interval = setInterval(() => {
+      checkStatus();
+    }, 30000); // 每 30 秒检查一次
+
+    return () => clearInterval(interval);
+  }, [checkStatus]);
 
   return {
     // 状态

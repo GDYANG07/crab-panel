@@ -42,13 +42,6 @@ import {
 type ViewMode = 'list' | 'detail';
 type ChannelGroup = keyof typeof channelGroups;
 
-// 消息格式选项
-const messageFormatOptions = [
-  { value: 'text', label: '纯文本' },
-  { value: 'markdown', label: 'Markdown' },
-  { value: 'html', label: 'HTML' },
-];
-
 // 分组顺序
 const groupOrder: ChannelGroup[] = ['domestic', 'international', 'other'];
 
@@ -268,13 +261,14 @@ interface ChannelCardProps {
 }
 
 function ChannelCard({ channel, onEdit, onDelete }: ChannelCardProps) {
+  const { t } = useTranslation();
   const meta = channelMetadata[channel.type];
 
   return (
     <div
       onClick={onEdit}
       className={`bg-[var(--color-card)] border-2 rounded-xl p-5 cursor-pointer hover:shadow-lg transition-all group ${
-        channel.connected ? 'border-green-400' : 'border-[var(--color-border)]'
+        channel.connected ? 'border-[var(--color-success)]' : 'border-[var(--color-border)]'
       }`}
     >
       <div className="flex items-start justify-between mb-4">
@@ -287,11 +281,11 @@ function ChannelCard({ channel, onEdit, onDelete }: ChannelCardProps) {
                 variant={channel.connected ? 'success' : 'default'}
                 size="sm"
               >
-                {channel.connected ? '已连接' : '未连接'}
+                {channel.connected ? t('channels.statusConnected') : t('channels.statusDisconnected')}
               </Badge>
               {channel.status === 'error' && (
                 <Badge variant="danger" size="sm">
-                  配置错误
+                  {t('channels.statusConfigError')}
                 </Badge>
               )}
             </div>
@@ -315,7 +309,7 @@ function ChannelCard({ channel, onEdit, onDelete }: ChannelCardProps) {
       <div className="flex items-center justify-between pt-3 border-t border-[var(--color-border)]">
         <div className="flex items-center gap-1 text-sm text-[var(--color-text-secondary)]">
           <MessageSquare className="w-4 h-4" />
-          <span>{channel.messageCount.toLocaleString()} 条消息</span>
+          <span>{t('channels.messagesCount', { count: channel.messageCount })}</span>
         </div>
         <span className="text-xs text-[var(--color-text-secondary)]">{meta.name}</span>
       </div>
@@ -487,7 +481,7 @@ function ChannelDetail({ channel, onBack, onUpdate, onTest, isUpdating, isTestin
       default:
         return (
           <div className="p-4 bg-[var(--color-background)] rounded-lg text-[var(--color-text-secondary)]">
-            该通道类型的配置表单正在开发中
+            {t('channels.configInDevelopment')}
           </div>
         );
     }
@@ -496,12 +490,12 @@ function ChannelDetail({ channel, onBack, onUpdate, onTest, isUpdating, isTestin
   // 获取配置状态
   const getConfigStatus = () => {
     if (channel.status === 'error') {
-      return { icon: AlertTriangle, color: 'text-[var(--color-danger)]', text: '配置有误' };
+      return { icon: AlertTriangle, color: 'text-[var(--color-danger)]', text: t('channels.statusHasError') };
     }
     if (channel.config && Object.keys(channel.config).some((k) => channel.config?.[k])) {
-      return { icon: CheckCircle, color: 'text-[var(--color-success)]', text: '已配置' };
+      return { icon: CheckCircle, color: 'text-[var(--color-success)]', text: t('channels.statusConfigured') };
     }
-    return { icon: Settings, color: 'text-[var(--color-text-secondary)]', text: '未配置' };
+    return { icon: Settings, color: 'text-[var(--color-text-secondary)]', text: t('channels.statusNotConfigured') };
   };
 
   const configStatus = getConfigStatus();
@@ -538,31 +532,35 @@ function ChannelDetail({ channel, onBack, onUpdate, onTest, isUpdating, isTestin
         <div className="lg:col-span-1 space-y-6">
           <Card>
             <div className="space-y-4">
-              <h3 className="font-medium text-[var(--color-text-primary)]">基本信息</h3>
+              <h3 className="font-medium text-[var(--color-text-primary)]">{t('channels.basicInfo')}</h3>
               <Input
-                label="通道名称"
+                label={t('channels.channelName')}
                 value={localName}
                 onChange={(e) => setLocalName(e.target.value)}
-                placeholder="输入通道名称"
+                placeholder={t('channels.channelNamePlaceholder')}
               />
               <Toggle
-                label="启用通道"
-                description="启用后 Agent 可以通过此通道收发消息"
+                label={t('channels.enableChannel')}
+                description={t('channels.enableChannelDesc')}
                 checked={localConfig.enabled !== false}
                 onChange={(checked) => setLocalConfig({ ...localConfig, enabled: checked })}
               />
               <Select
-                label="消息格式"
+                label={t('channels.messageFormat')}
                 value={localConfig.messageFormat || 'text'}
                 onChange={(value) => setLocalConfig({ ...localConfig, messageFormat: value as 'text' | 'markdown' | 'html' })}
-                options={messageFormatOptions}
+                options={[
+                  { value: 'text', label: t('channels.messageFormats.text') },
+                  { value: 'markdown', label: t('channels.messageFormats.markdown') },
+                  { value: 'html', label: t('channels.messageFormats.html') },
+                ]}
               />
             </div>
           </Card>
 
           <Card>
             <div className="space-y-4">
-              <h3 className="font-medium text-[var(--color-text-primary)]">操作</h3>
+              <h3 className="font-medium text-[var(--color-text-primary)]">{t('channels.operations')}</h3>
               <div className="space-y-2">
                 <Button
                   variant="secondary"
@@ -576,7 +574,7 @@ function ChannelDetail({ channel, onBack, onUpdate, onTest, isUpdating, isTestin
                   ) : (
                     <RefreshCw className="w-4 h-4 mr-1" />
                   )}
-                  测试连接
+                  {t('channels.testConnection')}
                 </Button>
                 <Button
                   variant="primary"
@@ -585,7 +583,7 @@ function ChannelDetail({ channel, onBack, onUpdate, onTest, isUpdating, isTestin
                   loading={isUpdating}
                 >
                   <Save className="w-4 h-4 mr-1" />
-                  保存配置
+                  {t('channels.saveConfig')}
                 </Button>
               </div>
             </div>
@@ -593,20 +591,22 @@ function ChannelDetail({ channel, onBack, onUpdate, onTest, isUpdating, isTestin
 
           {/* 状态卡片 */}
           <div className={`p-4 rounded-xl border-2 ${
-            channel.connected ? 'border-green-400 bg-green-50' : 'border-gray-300 bg-gray-50'
+            channel.connected
+              ? 'border-[var(--color-success)] bg-[var(--color-success)]/5'
+              : 'border-[var(--color-border)] bg-[var(--color-background)]'
           }`}>
             <div className="flex items-center gap-3">
               {channel.connected ? (
-                <CheckCircle className="w-8 h-8 text-green-500" />
+                <CheckCircle className="w-8 h-8 text-[var(--color-success)]" />
               ) : (
-                <AlertCircle className="w-8 h-8 text-gray-400" />
+                <AlertCircle className="w-8 h-8 text-[var(--color-text-secondary)]" />
               )}
               <div>
                 <div className="font-medium text-[var(--color-text-primary)]">
-                  {channel.connected ? '已连接' : '未连接'}
+                  {channel.connected ? t('channels.statusConnected') : t('channels.statusDisconnected')}
                 </div>
                 <div className="text-sm text-[var(--color-text-secondary)]">
-                  {channel.connected ? '通道正常工作' : '需要配置或检查连接'}
+                  {channel.connected ? t('channels.statusWorking') : t('channels.statusNeedsConfig')}
                 </div>
               </div>
             </div>
@@ -618,9 +618,9 @@ function ChannelDetail({ channel, onBack, onUpdate, onTest, isUpdating, isTestin
           <Card>
             <div className="space-y-6">
               <div>
-                <h3 className="font-medium text-[var(--color-text-primary)] mb-1">通道配置</h3>
+                <h3 className="font-medium text-[var(--color-text-primary)] mb-1">{t('channels.channelConfig')}</h3>
                 <p className="text-sm text-[var(--color-text-secondary)]">
-                  配置 {meta.name} 的连接参数
+                  {t('channels.channelConfigDesc', { name: meta.name })}
                 </p>
               </div>
               {renderConfigForm()}
@@ -650,6 +650,7 @@ function AddChannelModal({
   onAdd,
   isLoading,
 }: AddChannelModalProps) {
+  const { t } = useTranslation();
   const [name, setName] = useState('');
 
   const handleAdd = () => {
@@ -688,13 +689,13 @@ function AddChannelModal({
     <Modal
       isOpen={isOpen}
       onClose={handleClose}
-      title={selectedType ? '配置通道' : '添加通道'}
+      title={selectedType ? t('channels.addModal.configTitle') : t('channels.addModal.title')}
       size="lg"
       footer={
         selectedType ? (
           <>
             <Button variant="ghost" onClick={() => onSelectType(null as unknown as ChannelType)}>
-              返回选择
+              {t('channels.addModal.backToSelect')}
             </Button>
             <Button
               variant="primary"
@@ -703,12 +704,12 @@ function AddChannelModal({
               loading={isLoading}
             >
               <Check className="w-4 h-4 mr-1" />
-              添加
+              {t('channels.addModal.add')}
             </Button>
           </>
         ) : (
           <Button variant="ghost" onClick={handleClose}>
-            取消
+            {t('common.cancel')}
           </Button>
         )
       }
@@ -727,10 +728,10 @@ function AddChannelModal({
             </div>
           </div>
           <Input
-            label="通道名称"
+            label={t('channels.channelName')}
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder={`例如：我的${channelMetadata[selectedType].name}机器人`}
+            placeholder={`${t('channels.channelName')}: ${channelMetadata[selectedType].name}`}
             autoFocus
           />
         </div>

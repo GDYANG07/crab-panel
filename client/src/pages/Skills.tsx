@@ -257,6 +257,7 @@ function SkillCard({
   isInstalling,
   isUninstalling,
 }: SkillCardProps) {
+  const { t } = useTranslation();
   const formatNumber = (num: number) => {
     if (num >= 10000) return (num / 10000).toFixed(1) + 'w';
     if (num >= 1000) return (num / 1000).toFixed(1) + 'k';
@@ -278,7 +279,7 @@ function SkillCard({
                 <span>v{skill.version}</span>
                 {skill.installed && (
                   <Badge variant="success" size="sm">
-                    已安装
+                    {t('skills.installed')}
                   </Badge>
                 )}
               </div>
@@ -316,7 +317,7 @@ function SkillCard({
           className="flex-1"
           onClick={onViewDetail}
         >
-          详情
+          {t('skills.detail')}
         </Button>
         {skill.installed ? (
           <Button
@@ -332,7 +333,7 @@ function SkillCard({
             ) : (
               <Trash2 className="w-4 h-4 mr-1" />
             )}
-            卸载
+            {t('skills.uninstall')}
           </Button>
         ) : (
           <Button
@@ -348,7 +349,7 @@ function SkillCard({
             ) : (
               <Download className="w-4 h-4 mr-1" />
             )}
-            安装
+            {t('skills.install')}
           </Button>
         )}
       </div>
@@ -376,11 +377,7 @@ function SkillDetailModal({
   isInstalling,
   isUninstalling,
 }: SkillDetailModalProps) {
-  const formatNumber = (num: number) => {
-    if (num >= 10000) return (num / 10000).toFixed(1) + 'w';
-    if (num >= 1000) return (num / 1000).toFixed(1) + 'k';
-    return num.toString();
-  };
+  const { t } = useTranslation();
 
   if (!skill) return null;
 
@@ -393,7 +390,7 @@ function SkillDetailModal({
       footer={
         <>
           <Button variant="ghost" onClick={onClose}>
-            关闭
+            {t('skills.close')}
           </Button>
           {skill.installed ? (
             <Button
@@ -407,7 +404,7 @@ function SkillDetailModal({
               ) : (
                 <Trash2 className="w-4 h-4 mr-1" />
               )}
-              卸载
+              {t('skills.uninstall')}
             </Button>
           ) : (
             <Button
@@ -421,7 +418,7 @@ function SkillDetailModal({
               ) : (
                 <Download className="w-4 h-4 mr-1" />
               )}
-              安装
+              {t('skills.install')}
             </Button>
           )}
         </>
@@ -440,7 +437,7 @@ function SkillDetailModal({
               </h2>
               <span className="text-sm text-[var(--color-text-secondary)]">v{skill.version}</span>
               {skill.installed && (
-                <Badge variant="success">已安装</Badge>
+                <Badge variant="success">{t('skills.installed')}</Badge>
               )}
             </div>
             <div className="flex items-center gap-4 text-sm text-[var(--color-text-secondary)]">
@@ -450,7 +447,7 @@ function SkillDetailModal({
               </div>
               <div className="flex items-center gap-1">
                 <Download className="w-4 h-4" />
-                <span>{formatNumber(skill.installs)} 次安装</span>
+                <span>{t('skills.installCount', { count: skill.installs })}</span>
               </div>
               <div className="flex items-center gap-1">
                 <Star className="w-4 h-4 text-yellow-500" />
@@ -462,7 +459,7 @@ function SkillDetailModal({
 
         {/* 完整描述 */}
         <div>
-          <h3 className="font-medium text-[var(--color-text-primary)] mb-2">功能介绍</h3>
+          <h3 className="font-medium text-[var(--color-text-primary)] mb-2">{t('skills.featureIntro')}</h3>
           <p className="text-[var(--color-text-secondary)] leading-relaxed">
             {skill.fullDescription}
           </p>
@@ -470,13 +467,13 @@ function SkillDetailModal({
 
         {/* 分类 */}
         <div>
-          <h3 className="font-medium text-[var(--color-text-primary)] mb-2">分类</h3>
+          <h3 className="font-medium text-[var(--color-text-primary)] mb-2">{t('skills.category')}</h3>
           <div className="flex gap-2">
             <Badge>
               {skillCategories.find((c) => c.id === skill.category)?.label || skill.category}
             </Badge>
             {skill.requiresConfig && (
-              <Badge variant="warning">需要配置</Badge>
+              <Badge variant="warning">{t('skills.requiresConfig')}</Badge>
             )}
           </div>
         </div>
@@ -484,7 +481,7 @@ function SkillDetailModal({
         {/* 配置信息（如果已安装且有配置） */}
         {skill.installed && skill.config && (
           <div>
-            <h3 className="font-medium text-[var(--color-text-primary)] mb-2">当前配置</h3>
+            <h3 className="font-medium text-[var(--color-text-primary)] mb-2">{t('skills.currentConfig')}</h3>
             <div className="bg-[var(--color-background)] rounded-lg p-4 font-mono text-sm">
               <pre className="text-[var(--color-text-secondary)]">
                 {JSON.stringify(skill.config, null, 2)}
@@ -507,6 +504,7 @@ interface SkillConfigModalProps {
 }
 
 function SkillConfigModal({ skill, isOpen, onClose, onSave, isSaving }: SkillConfigModalProps) {
+  const { t } = useTranslation();
   const [config, setConfig] = useState<Record<string, unknown>>({});
 
   // 当技能变化时，重置配置
@@ -524,22 +522,22 @@ function SkillConfigModal({ skill, isOpen, onClose, onSave, isSaving }: SkillCon
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title={`配置 ${skill.name}`}
+      title={t('skills.configRequired').replace(':', '') + ' ' + skill.name}
       footer={
         <>
           <Button variant="ghost" onClick={onClose} disabled={isSaving}>
-            取消
+            {t('common.cancel')}
           </Button>
           <Button variant="primary" onClick={() => onSave(config)} loading={isSaving}>
             <Check className="w-4 h-4 mr-1" />
-            保存并安装
+            {t('skills.saveAndInstall')}
           </Button>
         </>
       }
     >
       <div className="space-y-4">
         <p className="text-[var(--color-text-secondary)]">
-          该技能需要配置以下参数才能正常使用：
+          {t('skills.configRequired')}
         </p>
 
         {/* 这里根据技能类型显示不同的配置项 */}

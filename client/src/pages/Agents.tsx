@@ -66,12 +66,12 @@ const categoryIcons = {
   custom: Terminal,
 };
 
-// 工具分类名称
-const categoryNames = {
-  system: '系统工具',
-  browser: '浏览器',
-  filesystem: '文件系统',
-  custom: '自定义工具',
+// 工具分类翻译 key 映射
+const categoryNameKeys = {
+  system: 'agents.categorySystem',
+  browser: 'agents.categoryBrowser',
+  filesystem: 'agents.categoryFilesystem',
+  custom: 'agents.categoryCustom',
 };
 
 // 通道图标映射
@@ -284,6 +284,7 @@ interface AgentCardProps {
 }
 
 function AgentCard({ agent, onEdit, onDelete }: AgentCardProps) {
+  const { t } = useTranslation();
   const handleEditClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     onEdit();
@@ -307,7 +308,7 @@ function AgentCard({ agent, onEdit, onDelete }: AgentCardProps) {
           <div>
             <h3 className="font-semibold text-[var(--color-text-primary)] text-lg">{agent.name}</h3>
             <Badge variant={agent.status === 'active' ? 'success' : 'default'} size="sm">
-              {agent.status === 'active' ? '活跃' : '停用'}
+              {agent.status === 'active' ? t('agents.statusActive') : t('agents.statusInactive')}
             </Badge>
           </div>
         </div>
@@ -328,7 +329,7 @@ function AgentCard({ agent, onEdit, onDelete }: AgentCardProps) {
       </div>
 
       <p className="text-[var(--color-text-secondary)] text-sm mb-4 line-clamp-2">
-        {agent.description || '暂无描述'}
+        {agent.description || t('agents.noDescription')}
       </p>
 
       <div className="flex items-center justify-between pt-3 border-t border-[var(--color-border)]">
@@ -339,11 +340,11 @@ function AgentCard({ agent, onEdit, onDelete }: AgentCardProps) {
             </span>
           ))}
           {(!agent.channels || agent.channels.length === 0) && (
-            <span className="text-sm text-[var(--color-text-secondary)]">未连接通道</span>
+            <span className="text-sm text-[var(--color-text-secondary)]">{t('agents.noChannels')}</span>
           )}
         </div>
         <span className="text-xs text-[var(--color-text-secondary)]">
-          {agent.model || '默认模型'}
+          {agent.model || t('agents.defaultModel')}
         </span>
       </div>
     </div>
@@ -600,7 +601,7 @@ function ToolsTab({ agent, onChange }: TabProps) {
                     <div className="flex items-center gap-2 mb-3">
                       <Icon className="w-4 h-4 text-[var(--color-primary)]" />
                       <h4 className="text-sm font-medium text-[var(--color-text-secondary)]">
-                        {categoryNames[category as keyof typeof categoryNames]}
+                        {t(categoryNameKeys[category as keyof typeof categoryNameKeys])}
                       </h4>
                     </div>
                     <div className="space-y-2">

@@ -1,49 +1,51 @@
 import { create } from 'zustand';
 
-export type ConnectionStatus = 'connecting' | 'connected' | 'disconnected' | 'error';
+const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+
+export type ConnectionStatus = 'connected' | 'disconnected' | 'error';
 
 interface GatewayConfig {
-  gateway: {
-    host: string;
-    port: number;
+  gateway?: {
+    host?: string;
+    port?: number;
   };
-  agents: Record<string, unknown>;
-  skills: string[];
+  agents?: Record<string, unknown>;
+  skills?: string[];
   [key: string]: unknown;
 }
 
 interface Agent {
   id: string;
   name: string;
-  status: string;
-  type: string;
+  status?: string;
+  type?: string;
   [key: string]: unknown;
 }
 
 interface Session {
   id: string;
-  agentId: string;
-  status: string;
-  createdAt: string;
+  channel?: { type: string; name: string };
+  user?: { name: string };
+  lastMessage?: { content: string; timestamp: string };
+  unreadCount?: number;
   [key: string]: unknown;
 }
 
-interface GatewayStatus {
-  status: ConnectionStatus;
-  connected: boolean;
-  mockMode: boolean;
+interface SystemStatus {
+  installed: boolean;
   version: string | null;
-  url: string;
-  timestamp: string;
+  gatewayRunning: boolean;
+  mockMode: boolean;
+  lastChecked: string;
 }
 
 interface GatewayState {
   // 连接状态
   status: ConnectionStatus;
-  connected: boolean;
+  installed: boolean;
+  gatewayRunning: boolean;
   mockMode: boolean;
   version: string | null;
-  gatewayUrl: string;
   lastUpdated: string | null;
 
   // 数据
@@ -69,20 +71,19 @@ interface GatewayState {
   fetchAgents: () => Promise<void>;
   fetchSessions: () => Promise<void>;
   updateConfig: (config: Partial<GatewayConfig>) => Promise<boolean>;
+  restartGateway: () => Promise<boolean>;
   startPolling: (interval?: number) => void;
   stopPolling: () => void;
   refreshAll: () => Promise<void>;
 }
 
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3000';
-
 export const useGatewayStore = create<GatewayState>((set, get) => ({
   // 初始状态
   status: 'disconnected',
-  connected: false,
-  mockMode: false,
+  installed: false,
+  gatewayRunning: false,
+  mockMode: true,
   version: null,
-  gatewayUrl: '',
   lastUpdated: null,
 
   config: null,
@@ -101,25 +102,26 @@ export const useGatewayStore = create<GatewayState>((set, get) => ({
   fetchStatus: async () => {
     set({ isLoadingStatus: true, error: null });
     try {
-      const response = await fetch(`${API_BASE}/api/gateway/status`);
+      const response = await fetch(`${API_BASE}/api/status`);
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-      const data: GatewayStatus = await response.json();
+      const data: SystemStatus = await response.json();
 
       set({
-        status: data.status,
-        connected: data.connected,
+        status: data.gatewayRunning ? 'connected' : 'disconnected',
+        installed: data.installed,
+        gatewayRunning: data.gatewayRunning,
         mockMode: data.mockMode,
         version: data.version,
-        gatewayUrl: data.url,
-        lastUpdated: data.timestamp,
+        lastUpdated: data.lastChecked,
         isLoadingStatus: false,
       });
     } catch (err) {
       set({
         status: 'error',
-        connected: false,
+        installed: false,
+        gatewayRunning: false,
         error: err instanceof Error ? err.message : 'Failed to fetch status',
         isLoadingStatus: false,
       });
@@ -230,7 +232,7 @@ export const useGatewayStore = create<GatewayState>((set, get) => ({
 
       if (data.success) {
         set({
-          config: newConfig as GatewayConfig,
+          config: newConfig,
           mockMode: data.mockMode,
           isLoadingConfig: false,
         });
@@ -247,8 +249,29 @@ export const useGatewayStore = create<GatewayState>((set, get) => ({
     }
   },
 
+  // 重启 Gateway
+  restartGateway: async () => {
+    try {
+      const response = await fetch(`${API_BASE}/api/gateway/restart`, {
+        method: 'POST',
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      return data.success;
+    } catch (err) {
+      set({
+        error: err instanceof Error ? err.message : 'Failed to restart gateway',
+      });
+      return false;
+    }
+  },
+
   // 开始轮询
-  startPolling: (interval = 10000) => {
+  startPolling: (interval = 15000) => {
     // 先停止现有的轮询
     get().stopPolling();
 

@@ -1,21 +1,18 @@
 import { Router } from 'express';
-import { getGatewayClient } from '../gateway/client.js';
+import { cliBridge } from '../services/cli-bridge.js';
 
 const router = Router();
-
-// Mock 通道数据存储
-const mockChannels = new Map();
 
 // GET /api/channels - 获取通道列表
 router.get('/', async (_req, res) => {
   try {
-    const client = getGatewayClient();
-    const result = await client.call('channels.list', {});
+    const channels = await cliBridge.getChannels();
+    const status = cliBridge.status;
 
     res.json({
       success: true,
-      channels: (result as { channels?: unknown[] })?.channels || Array.from(mockChannels.values()),
-      mockMode: client.isMockMode,
+      channels,
+      mockMode: status.mockMode,
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error';
@@ -29,8 +26,8 @@ router.get('/', async (_req, res) => {
 // POST /api/channels - 创建通道
 router.post('/', async (req, res) => {
   try {
-    const client = getGatewayClient();
     const { type, name, config } = req.body;
+    const status = cliBridge.status;
 
     if (!type || !name) {
       res.status(400).json({
@@ -40,10 +37,7 @@ router.post('/', async (req, res) => {
       return;
     }
 
-    const result = await client.call('channels.create', { type, name, config });
-
-    // Mock 模式下创建通道
-    if (client.isMockMode) {
+    if (status.mockMode) {
       const channel = {
         id: `channel-${Date.now()}`,
         type,
@@ -53,7 +47,6 @@ router.post('/', async (req, res) => {
         messageCount: 0,
         status: 'disconnected',
       };
-      mockChannels.set(channel.id, channel);
       res.json({
         success: true,
         channel,
@@ -62,11 +55,23 @@ router.post('/', async (req, res) => {
       return;
     }
 
-    res.json({
-      success: true,
-      channel: result,
-      mockMode: client.isMockMode,
-    });
+    const result = await cliBridge.execJSON<{ channel?: unknown }>(
+      `openclaw channels create --type "${type}" --name "${name}" --json`,
+      30000
+    );
+
+    if (result.success) {
+      res.json({
+        success: true,
+        channel: result.data?.channel || { id: `channel-${Date.now()}`, type, name, config },
+        mockMode: false,
+      });
+    } else {
+      res.status(500).json({
+        success: false,
+        error: result.error || 'Failed to create channel',
+      });
+    }
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error';
     res.status(500).json({
@@ -79,29 +84,29 @@ router.post('/', async (req, res) => {
 // PUT /api/channels/:id - 更新通道
 router.put('/:id', async (req, res) => {
   try {
-    const client = getGatewayClient();
     const { id } = req.params;
     const updates = req.body;
+    const status = cliBridge.status;
 
-    const result = await client.call('channels.update', { id, ...updates });
-
-    // Mock 模式下更新通道
-    if (client.isMockMode && mockChannels.has(id)) {
-      const channel = mockChannels.get(id);
-      Object.assign(channel, updates);
-      mockChannels.set(id, channel);
+    if (status.mockMode) {
       res.json({
         success: true,
-        channel,
+        channel: { ...updates, id },
         mockMode: true,
       });
       return;
     }
 
+    const result = await cliBridge.execJSON<{ channel?: unknown }>(
+      `openclaw channels update "${id}" --json`,
+      30000
+    );
+
     res.json({
-      success: true,
-      channel: result,
-      mockMode: client.isMockMode,
+      success: result.success,
+      channel: result.data?.channel || { ...updates, id },
+      mockMode: false,
+      error: result.success ? undefined : result.error,
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error';
@@ -115,19 +120,23 @@ router.put('/:id', async (req, res) => {
 // DELETE /api/channels/:id - 删除通道
 router.delete('/:id', async (req, res) => {
   try {
-    const client = getGatewayClient();
     const { id } = req.params;
+    const status = cliBridge.status;
 
-    await client.call('channels.delete', { id });
-
-    // Mock 模式下删除通道
-    if (client.isMockMode) {
-      mockChannels.delete(id);
+    if (status.mockMode) {
+      res.json({
+        success: true,
+        mockMode: true,
+      });
+      return;
     }
 
+    const result = await cliBridge.exec(`openclaw channels delete "${id}"`);
+
     res.json({
-      success: true,
-      mockMode: client.isMockMode,
+      success: result.success,
+      mockMode: false,
+      error: result.success ? undefined : result.error,
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error';
@@ -141,15 +150,24 @@ router.delete('/:id', async (req, res) => {
 // POST /api/channels/:id/test - 测试通道连接
 router.post('/:id/test', async (req, res) => {
   try {
-    const client = getGatewayClient();
     const { id } = req.params;
+    const status = cliBridge.status;
 
-    const result = await client.call('channels.test', { id });
+    if (status.mockMode) {
+      res.json({
+        success: true,
+        message: 'Mock mode: connection test passed',
+        mockMode: true,
+      });
+      return;
+    }
+
+    const result = await cliBridge.exec(`openclaw channels test "${id}"`);
 
     res.json({
-      success: true,
-      ...result as object,
-      mockMode: client.isMockMode,
+      success: result.success,
+      message: result.success ? 'Connection test passed' : (result.error || 'Connection test failed'),
+      mockMode: false,
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error';
