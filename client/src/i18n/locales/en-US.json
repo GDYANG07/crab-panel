@@ -17,7 +17,9 @@
     "connected": "Connected",
     "disconnected": "Disconnected",
     "expand": "Expand",
-    "collapse": "Collapse"
+    "collapse": "Collapse",
+    "viewAll": "View All",
+    "noData": "No Data"
   },
   "nav": {
     "dashboard": "Dashboard",
@@ -45,6 +47,50 @@
   "theme": {
     "light": "Light",
     "dark": "Dark"
+  },
+  "dashboard": {
+    "overview": {
+      "gateway": "Gateway Status",
+      "gatewayRunning": "Running",
+      "gatewayStopped": "Stopped",
+      "gatewayError": "Error",
+      "messages": "Today's Messages",
+      "messagesYesterday": "vs Yesterday",
+      "activeAgents": "Active Agents",
+      "agentsRatio": "Active / Total",
+      "channels": "Connected Channels",
+      "channelsRatio": "Connected / Total",
+      "checkConnection": "Check Connection"
+    },
+    "system": {
+      "title": "System Resources",
+      "cpu": "CPU Usage",
+      "cores": "cores",
+      "memory": "Memory Usage",
+      "disk": "Disk Usage"
+    },
+    "sessions": {
+      "title": "Recent Sessions",
+      "description": "Latest 5 sessions",
+      "noSessions": "No session records",
+      "justNow": "Just now",
+      "minutesAgo": "{{count}}m ago",
+      "hoursAgo": "{{count}}h ago",
+      "daysAgo": "{{count}}d ago"
+    },
+    "quickActions": {
+      "title": "Quick Actions",
+      "description": "Common management tasks",
+      "restartGateway": "Restart Gateway",
+      "openChat": "Open Chat",
+      "viewLogs": "View Logs",
+      "checkUpdate": "Check Update"
+    },
+    "trend": {
+      "title": "Message Trend",
+      "description": "Last 7 days message count",
+      "messages": "Messages"
+    }
   },
   "page": {
     "dashboard": {

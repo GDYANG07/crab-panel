@@ -17,7 +17,9 @@
     "connected": "已连接",
     "disconnected": "未连接",
     "expand": "展开",
-    "collapse": "折叠"
+    "collapse": "折叠",
+    "viewAll": "查看全部",
+    "noData": "暂无数据"
   },
   "nav": {
     "dashboard": "仪表盘",
@@ -45,6 +47,50 @@
   "theme": {
     "light": "浅色",
     "dark": "深色"
+  },
+  "dashboard": {
+    "overview": {
+      "gateway": "Gateway 状态",
+      "gatewayRunning": "运行中",
+      "gatewayStopped": "已停止",
+      "gatewayError": "错误",
+      "messages": "今日消息",
+      "messagesYesterday": "较昨日",
+      "activeAgents": "活跃 Agent",
+      "agentsRatio": "活跃数/总数",
+      "channels": "已连接通道",
+      "channelsRatio": "已连接/总数",
+      "checkConnection": "检查连接"
+    },
+    "system": {
+      "title": "系统资源监控",
+      "cpu": "CPU 使用率",
+      "cores": "核心",
+      "memory": "内存使用",
+      "disk": "磁盘使用"
+    },
+    "sessions": {
+      "title": "最近会话",
+      "description": "最新 5 条会话",
+      "noSessions": "暂无会话记录",
+      "justNow": "刚刚",
+      "minutesAgo": "{{count}}分钟前",
+      "hoursAgo": "{{count}}小时前",
+      "daysAgo": "{{count}}天前"
+    },
+    "quickActions": {
+      "title": "快速操作",
+      "description": "常用管理功能",
+      "restartGateway": "重启 Gateway",
+      "openChat": "打开对话",
+      "viewLogs": "查看日志",
+      "checkUpdate": "检查更新"
+    },
+    "trend": {
+      "title": "消息趋势",
+      "description": "最近 7 天消息量",
+      "messages": "消息数"
+    }
   },
   "page": {
     "dashboard": {
