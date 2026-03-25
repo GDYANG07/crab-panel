@@ -1,7 +1,10 @@
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { ToastProvider } from './components/ui';
+import DesignSystemDemo from './pages/DesignSystemDemo';
 import { useTranslation } from 'react-i18next';
 import { CrabLogo } from './components/CrabLogo';
 
-function App() {
+function Home() {
   const { t } = useTranslation();
 
   return (
@@ -15,16 +18,29 @@ function App() {
           {t('app.subtitle')}
         </p>
         <div className="mt-8 flex gap-4 justify-center">
-          <button
-            onClick={() => window.location.reload()}
+          <a
+            href="/design"
             className="px-6 py-3 rounded-lg bg-[var(--color-primary)] text-white font-medium
                        hover:bg-[#b55a3a] transition-colors shadow-sm"
           >
-            {t('common.refresh')}
-          </button>
+            查看设计系统
+          </a>
         </div>
       </div>
     </div>
+  );
+}
+
+function App() {
+  return (
+    <ToastProvider>
+      <BrowserRouter>
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/design" element={<DesignSystemDemo />} />
+        </Routes>
+      </BrowserRouter>
+    </ToastProvider>
   );
 }
 
