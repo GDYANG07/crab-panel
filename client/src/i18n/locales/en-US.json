@@ -12,14 +12,72 @@
     "confirm": "Confirm",
     "delete": "Delete",
     "edit": "Edit",
-    "create": "Create"
+    "create": "Create",
+    "version": "Version",
+    "connected": "Connected",
+    "disconnected": "Disconnected",
+    "expand": "Expand",
+    "collapse": "Collapse"
   },
   "nav": {
     "dashboard": "Dashboard",
+    "dashboardDesc": "Overview",
+    "chat": "Chat",
+    "chatDesc": "Chat with Agents",
     "agents": "Agents",
+    "agentsDesc": "Manage Agents",
     "channels": "Channels",
+    "channelsDesc": "Manage Channels",
     "skills": "Skills",
-    "config": "Configuration",
-    "logs": "Logs"
+    "skillsDesc": "Skill Store",
+    "memory": "Memory",
+    "memoryDesc": "Memory Store",
+    "config": "Config",
+    "configDesc": "System Config",
+    "monitor": "Monitor",
+    "monitorDesc": "System Monitor",
+    "settings": "Settings"
+  },
+  "layout": {
+    "gatewayConnected": "Gateway Connected",
+    "gatewayDisconnected": "Gateway Disconnected"
+  },
+  "theme": {
+    "light": "Light",
+    "dark": "Dark"
+  },
+  "page": {
+    "dashboard": {
+      "title": "Dashboard",
+      "description": "System Overview"
+    },
+    "chat": {
+      "title": "Chat",
+      "description": "Real-time chat with OpenClaw Agents"
+    },
+    "agents": {
+      "title": "Agents",
+      "description": "Create and manage AI Agents"
+    },
+    "channels": {
+      "title": "Channels",
+      "description": "Manage communication channels (Slack, Discord, Email, etc.)"
+    },
+    "skills": {
+      "title": "Skill Store",
+      "description": "Browse and install skill plugins"
+    },
+    "memory": {
+      "title": "Memory",
+      "description": "Manage Agent memory storage"
+    },
+    "config": {
+      "title": "Configuration",
+      "description": "Configure OpenClaw system settings"
+    },
+    "monitor": {
+      "title": "Monitor",
+      "description": "Real-time Gateway monitoring"
+    }
   }
 }
