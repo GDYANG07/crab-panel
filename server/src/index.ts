@@ -3,6 +3,8 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import { WebSocketServer, WebSocket } from 'ws';
 import { createServer } from 'http';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import { getGatewayClient } from './gateway/client.js';
 import gatewayRoutes from './routes/gateway.js';
 import systemRoutes from './routes/system.js';
@@ -27,6 +29,11 @@ const chatWss = new WebSocketServer({ server, path: '/ws/chat' });
 const logsWss = new WebSocketServer({ server, path: '/ws/logs' });
 
 const PORT = process.env.PORT || 3000;
+const NODE_ENV = process.env.NODE_ENV || 'development';
+
+// 获取当前文件目录（ESM 兼容）
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // 中间件
 app.use(cors());
@@ -131,6 +138,26 @@ logsWss.on('connection', (ws: WebSocket) => {
     clearInterval(interval);
   });
 });
+
+// 生产环境：托管前端静态文件
+if (NODE_ENV === 'production') {
+  const clientDistPath = path.resolve(__dirname, '../../client/dist');
+
+  // 托管静态文件
+  app.use(express.static(clientDistPath));
+
+  // SPA 路由回退：所有非 API 和 WebSocket 路由都返回 index.html
+  app.get('*', (req, res) => {
+    // 排除 API 和 WebSocket 路径
+    if (!req.path.startsWith('/api/') && !req.path.startsWith('/ws')) {
+      res.sendFile(path.join(clientDistPath, 'index.html'));
+    } else {
+      res.status(404).json({ error: 'Not found' });
+    }
+  });
+
+  console.log(`[Server] Production mode: serving static files from ${clientDistPath}`);
+}
 
 // 启动服务器
 server.listen(PORT, () => {
