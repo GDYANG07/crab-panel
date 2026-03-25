@@ -239,7 +239,27 @@ export class GatewayClient extends EventEmitter {
       },
       'sessions.list': {
         sessions: [
-          { id: 'mock-session-1', agentId: 'mock-agent-1', status: 'active', createdAt: new Date().toISOString() },
+          {
+            id: 'mock-session-1',
+            channel: { type: 'web', name: 'Web' },
+            user: { name: '访客' },
+            lastMessage: { content: '你好，请问能帮我写一段代码吗？', timestamp: new Date(Date.now() - 24 * 3600000).toISOString() },
+            unreadCount: 0,
+          },
+          {
+            id: 'mock-session-2',
+            channel: { type: 'slack', name: 'Slack' },
+            user: { name: '张三' },
+            lastMessage: { content: '帮我查一下今天的天气怎么样？', timestamp: new Date(Date.now() - 5 * 60000).toISOString() },
+            unreadCount: 2,
+          },
+          {
+            id: 'mock-session-3',
+            channel: { type: 'discord', name: 'Discord' },
+            user: { name: '李四' },
+            lastMessage: { content: '这个任务已经处理完了', timestamp: new Date(Date.now() - 30 * 60000).toISOString() },
+            unreadCount: 0,
+          },
         ],
       },
     };

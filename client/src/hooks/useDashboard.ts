@@ -228,26 +228,34 @@ const fetchRecentSessions = async (): Promise<Session[]> => {
   const res = await fetch(`${API_BASE}/gateway/sessions`);
   const data = await res.json();
 
-  if (data.mockMode) {
-    return generateMockSessions();
-  }
-
-  // 转换真实数据格式
-  return (data.sessions || []).slice(0, 5).map((s: {
+  // 转换数据格式（兼容真实数据和 Mock 数据）
+  const sessions = (data.sessions || []).slice(0, 5).map((s: {
     id: string;
     channel?: { type?: string; name?: string };
+    channelType?: string;
+    channelName?: string;
     user?: { name?: string };
+    userName?: string;
     lastMessage?: { content?: string; timestamp?: string };
+    lastMessageContent?: string;
+    lastMessageTime?: string;
     unreadCount?: number;
   }) => ({
     id: s.id,
-    channelType: s.channel?.type || 'unknown',
-    channelName: s.channel?.name || '未知通道',
-    userName: s.user?.name || '未知用户',
-    lastMessage: s.lastMessage?.content || '无消息',
-    lastMessageTime: s.lastMessage?.timestamp || new Date().toISOString(),
+    channelType: s.channel?.type || s.channelType || 'unknown',
+    channelName: s.channel?.name || s.channelName || '未知通道',
+    userName: s.user?.name || s.userName || '未知用户',
+    lastMessage: s.lastMessage?.content || s.lastMessageContent || '无消息',
+    lastMessageTime: s.lastMessage?.timestamp || s.lastMessageTime || new Date().toISOString(),
     unreadCount: s.unreadCount || 0,
   }));
+
+  // 如果返回的 sessions 为空且是 Mock 模式，使用生成的 Mock 数据
+  if (sessions.length === 0 && data.mockMode) {
+    return generateMockSessions();
+  }
+
+  return sessions;
 };
 
 // 获取消息趋势
